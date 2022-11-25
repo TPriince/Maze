@@ -1,154 +1,141 @@
+#pragma once
 #ifndef HEADER_H
 #define HEADER_H
 
-#define SCREEN_WIDTH 1080
-#define SCREEN_HEIGHT 600
-#define gun_scale 0.35
-#define map_x 8
-#define map_y 8
-#define map_s 64
-#define PI 3.14159265
-#define PI2 (0.5 * PI)
-#define PI3 (1.5 * PI)
-#define DR 0.0174533
-#define MAP_SCALE 0.25
-#define num_enemy 5
-#define FOV (PI / 3)
-#define RAD_DEG 57.296
-#define num_rays 60
-
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdio.h>
+//standard library
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
+#include <stdint.h>
 #include <math.h>
-#include <time.h>
+#include <limits.h>
+#include <stdio.h>
+#include <stdbool.h>
+#include <float.h>
+#include "upng.h"
 
-/**
- * struct SDL_Instance - structure for sdl instance
- * @win: window of sdl
- * @ren: surface to draw
- *
- * Decscription: structure to create window and surface of SDL
-**/
-typedef struct SDL_Instance
-{
-	SDL_Window *win;
-	SDL_Renderer *ren;
-} SDL_Instance;
+//constants
 
-/**
- * struct btn_keys - structure for event keys
- * @w: up key
- * @a: down key
- * @d: right key
- * @a: left key
- * @e: key for open door
- * @x: key for exit
- * @s: down key
- *
- * Description: structure for handling movement & rotation
- **/
-typedef struct btn_keys
-{
-	int w, a, d, s, e, x;
-} btn_keys;
+#define PI 3.14159265
+#define TWO_PI 6.28318530
+#define TILE_SIZE 64
+#define MAP_NUM_ROWS 13
+#define MAP_NUM_COLS 20
+#define SCREEN_WIDTH (MAP_NUM_COLS * TILE_SIZE)
+#define SCREEN_HEIGHT (MAP_NUM_ROWS * TILE_SIZE)
+#define MINIMAP_SCALE_FACTOR 0.996
+#define MAP_NUM_ROWS 13
+#define MAP_NUM_COLS 20
+#define FOV_ANGLE (60 * (PI / 180))
+#define PROJ_PLANE ((SCREEN_WIDTH / 2) / tan(FOV_ANGLE / 2))
+#define FPS 30
+#define FRAME_TIME_LENGTH (1000 / FPS)
+#define NUM_RAYS SCREEN_WIDTH
+#define NUM_TEXTURES 8
+typedef uint32_t color_t;
 
-/**
- * struct player_s - struburte for the player
- * @x: the x coordinate postion
- * @y: the y coordinate position
- * @w: the width of the player
- * @h: the height of the player
- * @a: angle of the player
- * @dx: delta x of the player
- * @dy: delta y of the player
- **/
+//variables
+extern bool gameRunning;
+
+//function in window file
+bool initializedWindow(void);
+void renderColorBuffer(void);
+void destroyWindow(void);
+void drawPixel(int x, int y, color_t color);
+void clearColorBuffer(color_t color);
+
+//function in main file
+void destroyGame(void);
+void setupGame(void);
+void updateGame(void);
+void renderGame(void);
+
+//function in draw file
+void drawRectangle(int x, int y, int width, int height, color_t color);
+void drawLine(int x0, int y0, int x1, int y1, color_t color);
+
+//function in rays file
+void castAllRays(void);
+void castRay(float rayAngle, int stripId);
+void renderRays(void);
+void horizontalInter(float rayAngle);
+void verticalInter(float rayAngle);
+
+//function in player file
+void movePlayer(float DeltaTime);
+void renderPlayer(void);
+
+//function in ray_direction file
+float distanceBetweenPoints(float x1, float y1, float x2, float y2);
+bool isRayFacingUp(float angle);
+bool isRayFacingDown(float angle);
+bool isRayFacingLeft(float angle);
+bool isRayFacingRight(float angle);
+
+//function in input file
+void SDL_KEYDOWN_FUNC(SDL_Event event);
+void SDL_KEYUP_FUNC(SDL_Event event);
+void handleInput(void);
+
+//function in map file
+bool DetectCollision(float x, float y);
+bool isInsideMap(float x, float y);
+void renderMap(void);
+int getMapValue(int row, int col);
+
+//structs for player
 typedef struct player_s
 {
-	float x, y, w, h, a, dx, dy;
+	float x;
+	float y;
+	float width;
+	float height;
+	int turnDirection;
+	int walkDirection;
+	float rotationAngle;
+	float walkSpeed;
+	float turnSpeed;
 } player_t;
 
+//struct variable player
 extern player_t player;
 
-/**
- * struct enemy_s - structure for the enemy
- * @x: the x coordinate postion
- * @y: the y coordinate position
- * @z: the z coordinate
- * @path: the given path of the image
- **/
-typedef struct enemy_s
+//structs for ray
+typedef struct ray_s
 {
-	float x, y, z;
-	char *path;
-} enemy_t;
+	float rayAngle;
+	float wallHitX;
+	float wallHitY;
+	float distance;
+	bool wasHitVertical;
+	int wallHitContent;
+} ray_t;
 
-extern enemy_t enemy;
-extern float buff[num_rays];
+//struct variable rays
+extern ray_t rays[NUM_RAYS];
 
-/** main.c **/
-void init_game(void);
-void display(SDL_Instance instance);
+/**
+ * struct texture_s - struct for the textures
+ * @width: texture width
+ * @height: texture height
+ * @texture_buffer: pointer to texture buffer
+ * @upngTexture: pointer to upng buffer
+ *
+ */
 
-/** input **/
-int poll_events(SDL_Instance instance);
-void handle_key_down(SDL_Instance instance);
-void key_up(SDL_Event ev);
-void key_down(SDL_Event ev);
-void handle_door(void);
+typedef struct texture_s
+{
+	int width;
+	int height;
+	color_t* texture_buffer;
+	upng_t* upngTexture;
+} texture_t;
 
-/** window **/
-int init_instance(SDL_Instance *in);
-float FixAng(float a);
+texture_t wallTextures[NUM_TEXTURES];
 
-/** draw **/
-void display_player(SDL_Instance instance);
-void draw_map(SDL_Instance ins);
-void draw_scene(SDL_Instance ins, int n, float h, float ray_a, float shade,
-		float rx, float ry, int m_txr);
-void draw_floor(SDL_Instance ins, float ln_off, int n, float line, float ra);
-void draw_roof(SDL_Instance ins, float ln_off, int n, float line, float ra);
-
-/** cast **/
-void ray_cast(SDL_Instance ins);
-int hit_wall(float rx, float ry);
-void horizontal_collision(float ray_a, float *d, float *hx, float *hy, int *h);
-void vertical_collision(float ray_a, float *vd, float *vx, float *vy, int *v);
-float find_distance(float ax, float ay, float bx, float by);
-
-/** draw2 **/
-void add_weapon(SDL_Instance ins);
-void add_enemy(SDL_Instance ins);
-float find_viewdistance(void);
-void draw_sprite_map(SDL_Instance ins);
-void sort_sprite(int *sprite, double *spr_dis, int n);
-
-/** texture **/
-float get_texture(int idx);
-
-/** map **/
-void setmap_value(int mx, int my, int val);
-int getmap_value(int x, int y, int mp);
-void free_numbers(int **numbers);
-void make_map(char **argv);
-
-/** get_map **/
-int _atoi(char *s);
-char *_strdup(char *str);
-int _length(char *str);
-int **get_altitude(char **argv);
-char **str_split(char *str, char *del);
-
-/** free_mem **/
-void free_grid(SDL_Point ***grid);
-void free_tokens(char **tokens);
-void free_cols(char ***cols);
-void free_numbers(int **numbers);
-
-#endif /* HEADER_H */
+void WallTexturesready(void);
+void freeWallTextures(void);
+/* Functions-variables-structs for walls */
+void renderCeil(int wallTopPixel, color_t* texelColor, int x);
+void renderFloor(int wallBottomPixel, color_t* texelColor, int x);
+void changeColorIntensity(color_t* color, float factor);
+void renderWall(void);
+#endif
