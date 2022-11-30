@@ -1,102 +1,62 @@
 #include "../headers/header.h"
 
-static SDL_Renderer *renderer;
-static color_t *colorBuffer;
-static SDL_Texture *colorBufferTexture;
-static SDL_Window *win;
-
 /**
- * initializedWindow - Initialize the window to render the maze
- * return - true of false
- */
+ * init_instance - intialize all instance
+ * @in: the given instance
+ *
+ * Return: 0 on success 1 otherwise
+ **/
 
-bool initializedWindow(void)
+int init_instance(SDL_Instance *in)
 {
-
-	SDL_DisplayMode display_mode;
-	int fullScreenWidth, fullScreenHeight;
-
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
+	/** if the window is not initialized **/
+	if (SDL_Init(SDL_INIT_VIDEO) != 0)
 	{
-		fprintf(stderr, "Error initializing SDL.\n");
-		return (false);
+		fprintf(stderr, "Unable to initialize SDL: %s\n", SDL_GetError());
+		return (1);
 	}
-	SDL_GetCurrentDisplayMode(0, &display_mode);
-	fullScreenWidth = display_mode.w;
-	fullScreenHeight = display_mode.h;
-	win = SDL_CreateWindow(
-		NULL,
-		SDL_WINDOWPOS_CENTERED,
-		SDL_WINDOWPOS_CENTERED,
-		fullScreenWidth,
-		fullScreenHeight,
-		SDL_WINDOW_BORDERLESS
-	);
-	if (!win)
+	/** create the windwo with the given width & height **/
+	in->win = SDL_CreateWindow("The Maze project", 0, 0, SCREEN_WIDTH,
+	SCREEN_HEIGHT, SDL_WINDOW_OPENGL);
+	/** if window is not created **/
+	if (in->win == NULL)
 	{
-		fprintf(stderr, "Error creating SDL window.\n");
-		return (false);
+		fprintf(stderr, "SDL_CreateWindow Error: %s\n", SDL_GetError());
+		SDL_Quit();
+		return (1);
 	}
-	renderer = SDL_CreateRenderer(win, -1, 1);
-	if (!renderer)
+	/** create the renderer **/
+	in->ren = SDL_CreateRenderer(in->win, -1, SDL_RENDERER_ACCELERATED
+	| SDL_RENDERER_PRESENTVSYNC);
+	/** if renderer is not created **/
+	if (in->ren == NULL)
 	{
-		fprintf(stderr, "Error creating SDL renderer.\n");
-		return (false);
+		fprintf(stderr, "SDL_CreateRenderer Error: %s\n", SDL_GetError());
+		SDL_Quit();
+		return (1);
 	}
-	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-
-	/* allocate the total amount of bytes in memory to hold our colorbuffer */
-	colorBuffer = malloc(sizeof(color_t) * SCREEN_WIDTH * SCREEN_HEIGHT);
-
-	/* create an SDL_Texture to display the colorbuffer */
-	colorBufferTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32,
-		SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-	return (true);
+	/** if the sdl image is not initialized **/
+	if (IMG_Init(IMG_INIT_PNG) != IMG_INIT_PNG)
+	{
+		fprintf(stderr, "Failed to initialize SDL_image.\n");
+		return (1);
+	}
+	return (0);
 }
 
 /**
- * clearColorBuffer - clear buffer for every frame
- * @color: color buffer
- */
-void clearColorBuffer(color_t color)
+ * FixAng - reset the angle if it is above the range
+ * @a: the given angle
+ *
+ * Return: the converted angle
+ **/
+float FixAng(float a)
 {
-	int i;
-
-	for (i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++)
-		colorBuffer[i] = color;
+	/** if the angle is above 360 degeree **/
+	if (a > 2 * PI)
+		a -= 2 * PI;
+	/** if the angle is negative **/
+	if (a < 0)
+		a += 2 * PI;
+	return (a);
 }
-/**
- * destroyWindow - destroy window and subsystem when the game is over.
- */
-void destroyWindow(void)
-{
-	free(colorBuffer);
-	SDL_DestroyTexture(colorBufferTexture);
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(win);
-	SDL_Quit();
-}
-/**
- * renderColorBuffer - render buffer for every frame
- */
-void renderColorBuffer(void)
-{
-	SDL_UpdateTexture(colorBufferTexture, NULL, colorBuffer, 
-			  (int)(SCREEN_WIDTH * sizeof(color_t))
-			 );
-	SDL_RenderCopy(renderer, colorBufferTexture, NULL, NULL);
-	SDL_RenderPresent(renderer);
-}
-/**
- * drawPixel - assign a color to each pixel
- * @x: x  pixel coordinate
- * @y: y pixel coordinate 
- * @color: color buffer
- */
-void drawPixel(int x, int y, color_t color)
-{
-	colorBuffer[(SCREEN_WIDTH * y) + x] = color;
-}
-
-
-

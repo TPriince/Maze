@@ -1,91 +1,77 @@
 #include "../headers/header.h"
 
-static const int map[MAP_NUM_ROWS][MAP_NUM_COLS] = {
-	{6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6},
-	{6, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 6},
-	{6, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 6, 0, 0, 0, 6, 0, 0, 0, 6},
-	{6, 0, 1, 0, 1, 0, 1, 0, 0, 1, 0, 6, 0, 7, 7, 0, 0, 0, 0, 6},
-	{6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 7, 0, 6},
-	{6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 6},
-	{6, 0, 0, 0, 0, 0, 7, 7, 7, 0, 0, 1, 0, 0, 0, 0, 7, 7, 0, 6},
-	{6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-	{6, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 1, 0, 6},
-	{6, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 7, 0, 0, 0, 0, 1, 0, 6},
-	{6, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-	{6, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6},
-	{6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6}
-};
+int map[map_y][map_x] = {
+	{1, 1, 1, 1, 1, 3, 1, 1},
+	{1, 0, 0, 0, 1, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 1},
+	{1, 1, 4, 1, 0, 0, 0, 1},
+	{2, 0, 0, 0, 0, 0, 0, 3},
+	{2, 0, 0, 0, 1, 0, 0, 1},
+	{2, 0, 0, 0, 0, 1, 0, 1},
+	{1, 1, 1, 2, 1, 1, 1, 1},
+	};
+
+int map_floor[map_y][map_x] = {
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 1, 1, 0, 0},
+	{0, 0, 0, 0, 2, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 0, 2, 0, 0, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	{0, 1, 1, 1, 1, 0, 0, 0},
+	{0, 0, 0, 0, 0, 0, 0, 0},
+	};
+
 
 /**
- * isInsideMap - check if we continue within the map
- * @x: next x coordinate
- * @y: next y coordinate
- * @Return: true if it is within the map, false otherwise
-*/
-
-bool isInsideMap(float x, float y)
+ * getmap_value - find the value of the map at agiven coordinate
+ * @x: x-coordinate
+ * @y: y-coordinate
+ * @mp: the required map type
+ *
+ * Return: the value at x,y
+ **/
+int getmap_value(int x, int y, int mp)
 {
-	return (x >= 0 && x <= MAP_NUM_COLS * TILE_SIZE &&
-		y >= 0 && y <= MAP_NUM_ROWS * TILE_SIZE);
+	/** if the map floor is required **/
+	if (mp == 1)
+		return (map_floor[y][x]);
+	else
+		return (map[y][x]);
 }
 
 /**
- * DetectCollision - Checks if there could be a collision
- * @x: next x coordinate
- * @y: next y coordinate
- * Return: true if collision is detected, false otherwise
-*/
-
-bool DetectCollision(float x, float y)
+ * setmap_value - set the value of map at a given coordinate
+ * @x: x-coordinate
+ * @y: y-coordinate
+ * @val: the value to set
+ *
+ * Return: nothing
+ **/
+void setmap_value(int x, int y, int val)
 {
-	int mapGridX, mapGridY;
-
-	if (x < 0 || x >= MAP_NUM_COLS * TILE_SIZE ||
-		y < 0 || y >= MAP_NUM_ROWS * TILE_SIZE)
-		return (true);
-
-	mapGridX = floor(x / TILE_SIZE);
-	mapGridY = floor(y / TILE_SIZE);
-	return (map[mapGridY][mapGridX] != 0);
+	/** set the map value to argument val **/
+	map[y][x] = val;
 }
-
 /**
- * getMapValue - check if we continue within the map
- * @row: map row to check
- * @col: map column to check
- * @Return: The position value in the map
-*/
-int getMapValue(int row, int col)
+ * make_map - function to make map from the given file
+ * @argv: the array of the given argument
+ *
+ * Return: nothing
+ **/
+void make_map(char **argv)
 {
+	int i, j;
+	int **file_map;
 
-	return (map[row][col]);
-
-}
-
-/**
- * renderMap - render the map
-*/
-
-void renderMap(void)
-{
-	int i, j, tileX, tileY;
-	color_t tileColor;
-
-	for (i = 0; i < MAP_NUM_ROWS; i++)
+	/** get the map value form the file **/
+	file_map = get_altitude(argv);
+	/** update the map value with value parsed from the file **/
+	for (i = 0; i < map_x; i++)
 	{
-		for (j = 0; j < MAP_NUM_COLS; j++)
-		{
-			tileX = j * TILE_SIZE;
-			tileY = i * TILE_SIZE;
-			tileColor = map[i][j] != 0 ? 0xFFFFFFFF : 0x00000000;
-
-			drawRectangle(
-				tileX* MINIMAP_SCALE_FACTOR,
-				tileY *MINIMAP_SCALE_FACTOR,
-				TILE_SIZE* MINIMAP_SCALE_FACTOR,
-				TILE_SIZE *MINIMAP_SCALE_FACTOR,
-				tileColor
-			);
-		}
+		for (j = 0; j < map_y; j++)
+			map[i][j] = file_map[i][j];
 	}
+	/** free the allocated map **/
+	free_numbers(file_map);
 }

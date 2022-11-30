@@ -1,90 +1,73 @@
 #include "../headers/header.h"
 
-bool gameRunning = false;
-int TicksLastFrame = 0;
-player_t player;
 
+enemy_t enemy;
 /**
-* updateGame - update delta time per frame
-*/
-
-void updateGame(void)
+ * main - Entry point for execution
+ * @argc: the number of argument
+ * @argv: vector for the given argument
+ *
+ * Return: always success
+ **/
+int main(int argc, char **argv)
 {
-	float DeltaTime;
-	int timeToWait = FRAME_TIME_LENGTH - (SDL_GetTicks() - TicksLastFrame);
-
-	if (timeToWait > 0 && timeToWait <= FRAME_TIME_LENGTH)
+	/** instance variable **/
+	SDL_Instance instance;
+	/** create & initialize the window **/
+	if (init_instance(&instance) != 0)
+		return (1);
+	/** initialize the game **/
+	init_game();
+	if (argc > 1)
+		make_map(argv);
+	while ("C is awesome")
 	{
-		SDL_Delay(timeToWait);
+		SDL_SetRenderDrawColor(instance.ren, 76, 76, 76, 0);
+		SDL_RenderClear(instance.ren);
+
+		/** handle the input keys from the user **/
+		if (poll_events(instance) == 1)
+			break;
+		/** draw the wall, ceiling, map & sprite **/
+		display(instance);
+		SDL_RenderPresent(instance.ren);
 	}
-	DeltaTime = (SDL_GetTicks() - TicksLastFrame) / 1000.0f;
-
-	TicksLastFrame = SDL_GetTicks();
-
-	movePlayer(DeltaTime);
-}
-
-/**
-* setupGame - initialize player and load wall textures
-*/
-void setupGame(void)
-{
-
-	player.x = SCREEN_WIDTH / 2;
-	player.y = SCREEN_HEIGHT / 2;
-	player.width = 10;
-	player.height = 30;
-	player.walkDirection = 0;
-	player.walkSpeed = 100;
-	player.turnDirection = 0;
-	player.turnSpeed = 45 * (PI / 180);
-	player.rotationAngle = PI / 2;
-}
-
-/**
-* renderGame - calls all functions for rendering
-*/
-
-void renderGame(void)
-{
-
-
-	renderMap();
-	renderRays();
-	renderPlayer();
-
-	renderColorBuffer();
-}
-
-/**
-* DestroyGame - free wall textures and destroy window
-*/
-
-void destroyGame(void)
-{
-	//freeWallTextures();
-	destroyWindow();
-
-}
-
-/**
-* main - entry point
-* Return: 0
-*/
-
-int main(void)
-{
-	gameRunning = initializedWindow();
-	setupGame();
-
-	while (gameRunning)
-
-	{
-		handleInput();
-		updateGame();
-		renderGame();
-		
-	}
-	destroyWindow();
+	/** destroy the renderer & the window & quit**/
+	SDL_DestroyRenderer(instance.ren);
+	SDL_DestroyWindow(instance.win);
+	SDL_Quit();
 	return (0);
+}
+
+/**
+ * display - function to display the game
+ * @instance: the given sdl2 instance
+ *
+ * Return: nothing
+ **/
+void display(SDL_Instance instance)
+{
+	ray_cast(instance);
+	add_enemy(instance);
+	draw_map(instance);
+	display_player(instance);
+	add_weapon(instance);
+	draw_sprite_map(instance);
+}
+
+/**
+ * init_game - function to initialize the game
+ *
+ * Return: nothing
+ **/
+void init_game(void)
+{
+	/** initialize the player x, y, width, heigth and deltas **/
+	player.x = 150;
+	player.y = 400;
+	player.w = 12;
+	player.h = 12;
+	player.a = PI3;
+	player.dx = cos(player.a) * 5;
+	player.dy = sin(player.a) * 5;
 }
